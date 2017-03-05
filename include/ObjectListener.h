@@ -15,16 +15,18 @@ private:
     std::string mapFrameId_;
     std::string objFramePrefix_;
     tf::TransformListener tfListener_;
-    ros::NodeHandle nh_;
     ros::Subscriber subs_;
+    ros::Publisher pub_;
     std_msgs::Float32MultiArray coordinates;
 
 public:
 
-    ObjectListener() {
+    ObjectListener(ros::NodeHandle nh) {
         mapFrameId_ = "/map";
         objFramePrefix_ = "object";
-        subs_ = nh_.subscribe("/objectsStamped", 1, &ObjectListener::objectsDetectedCallback, this);
+        coordinates = std_msgs::Float32MultiArray();
+        subs_ = nh.subscribe("/objectsStamped", 1, &ObjectListener::objectsDetectedCallback, this);
+        pub_ = nh.advertise<std_msgs::Float32MultiArray>("object_position", 1);
         //ros::spin();
     }
 
@@ -71,6 +73,7 @@ public:
                         ROS_INFO("%f", pose.getOrigin().x());
                         double x = pose.getOrigin().x();
                         float fx = (float) x;
+                        coordinates.data.push_back(fx);
                         //coordinates.data[0] = fx;
                         //This causes process to die
                         /*coordinates.data[0] = pose.getOrigin().x();
@@ -93,8 +96,7 @@ public:
     }
 
     void publishPosition() {
-        ros::Publisher pub = nh_.advertise<std_msgs::Float32MultiArray>("object_position", 1);
-        pub.publish(coordinates);
+        pub_.publish(coordinates);
     }
 
 };
