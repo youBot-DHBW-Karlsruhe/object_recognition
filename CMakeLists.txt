@@ -6,16 +6,24 @@ find_package(catkin REQUIRED COMPONENTS
  tf
  std_msgs
  find_object_2d
+ geometry_msgs
+ message_generation
 )
 
-#generate_messages(
-# DEPENDENCIES
-# std_msgs
-#)
+add_message_files(
+ FILES
+ ObjectPosition.msg
+)
+generate_messages(
+ DEPENDENCIES
+ std_msgs
+ geometry_msgs
+)
 
 catkin_package(
  INCLUDE_DIRS include
  CATKIN_DEPENDS std_msgs
+ message_runtime
 )
 
 include_directories(
