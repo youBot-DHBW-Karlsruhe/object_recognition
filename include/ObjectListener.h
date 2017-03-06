@@ -6,6 +6,7 @@
 #include <tf/transform_listener.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <object_recognition/ObjectPosition.h>
+#include <math.h>
 
 namespace cleaner {
 
@@ -148,7 +149,7 @@ public:
         double roll, pitch, yaw;
         tf::Matrix3x3(tfQuat).getRPY(roll, pitch, yaw);
         //ROS_INFO("Roll: %f",roll);
-        roll += 0.8;
+        roll += (M_PI/2);
         tfQuat.setRPY(roll, pitch, yaw);
         /*tf::Matrix3x3(tfQuat).getRPY(roll, pitch, yaw);
         ROS_INFO("Roll: %f",roll);*/
