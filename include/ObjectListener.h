@@ -148,11 +148,16 @@ public:
         tf::quaternionMsgToTF(msgQuat,tfQuat);
         double roll, pitch, yaw;
         tf::Matrix3x3(tfQuat).getRPY(roll, pitch, yaw);
-        //ROS_INFO("Roll: %f",roll);
-        roll += (M_PI/2);
+        /*double rollDegree = roll * 180 / M_PI;
+        ROS_INFO("Roll before change: %f",rollDegree);*/
+        if(roll < 0){
+            roll += (M_PI/2);
+        }else{
+            roll -= (M_PI/2);
+        }
+        /*rollDegree = roll * 180 / M_PI;
+        ROS_INFO("Roll after change: %f",rollDegree);*/
         tfQuat.setRPY(roll, pitch, yaw);
-        /*tf::Matrix3x3(tfQuat).getRPY(roll, pitch, yaw);
-        ROS_INFO("Roll: %f",roll);*/
         tf::quaternionTFToMsg(tfQuat, msgQuat);
     }
 
