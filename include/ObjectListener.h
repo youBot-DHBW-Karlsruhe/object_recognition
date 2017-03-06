@@ -78,7 +78,7 @@ public:
 
                         int threshold = 5;
 
-                        if (currentObject.positions.size() > threshold) {
+                        if (currentObject.positions.size() >= threshold) {
                             object_recognition::ObjectPosition aggregatedPosition = averageAggregation(currentObject);
                             publishPosition(aggregatedPosition);
                             deleteObjectPositions(currentObject);
@@ -115,7 +115,7 @@ public:
         }
     }
 
-    void deleteObjectPositions(cleaner::ObjectPositions currentObject){
+    void deleteObjectPositions(cleaner::ObjectPositions &currentObject){
         currentObject.positions.clear();
     }
 
@@ -142,11 +142,27 @@ public:
         return finalCoordinates;
     }
 
+    void changeGraspingDegree(geometry_msgs::Quaternion &msgQuat){
+        tf::Quaternion tfQuat;
+        tf::quaternionMsgToTF(msgQuat,tfQuat);
+        double roll, pitch, yaw;
+        tf::Matrix3x3(tfQuat).getRPY(roll, pitch, yaw);
+        //ROS_INFO("Roll: %f",roll);
+        roll += 0.8;
+        tfQuat.setRPY(roll, pitch, yaw);
+        /*tf::Matrix3x3(tfQuat).getRPY(roll, pitch, yaw);
+        ROS_INFO("Roll: %f",roll);*/
+        tf::quaternionTFToMsg(tfQuat, msgQuat);
+    }
+
     object_recognition::ObjectPosition averageAggregation(cleaner::ObjectPositions currentObject) {
         object_recognition::ObjectPosition aggregatedPosition;
         aggregatedPosition.object_id = currentObject.objectId;
         for (int i = 0; i < currentObject.positions.size(); i++){
             aggregatedPosition.pose = addBiasedCoordinates(aggregatedPosition.pose, currentObject.positions.at(i).pose, currentObject.positions.size());
+        }
+        if(true){ //think of a useful condition here
+            changeGraspingDegree(aggregatedPosition.pose.orientation);
         }
         return aggregatedPosition;
     }
