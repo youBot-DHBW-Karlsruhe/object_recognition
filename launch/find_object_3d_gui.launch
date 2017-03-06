@@ -18,6 +18,8 @@
 		<remap from="depth_registered/image_raw" to="camera/depth_registered/image_raw"/>
 		<remap from="depth_registered/camera_info" to="camera/depth_registered/camera_info"/>
 	</node>
+
+	<node name="object_listener" pkg="object_recognition" type="object_recognition" output="screen"/>
 	
 	<!-- Example of tf synchronisation with the objectsStamped message -->
 	<node name="tf_example" pkg="find_object_2d" type="tf_example" output="screen">
