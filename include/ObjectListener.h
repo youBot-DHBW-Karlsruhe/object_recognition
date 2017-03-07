@@ -27,7 +27,6 @@ public:
         coordinates = std_msgs::Float32MultiArray();
         subs_ = nh.subscribe("/objectsStamped", 1, &ObjectListener::objectsDetectedCallback, this);
         pub_ = nh.advertise<std_msgs::Float32MultiArray>("object_position", 1);
-        //ros::spin();
     }
 
     void objectsDetectedCallback(const find_object_2d::ObjectsStampedConstPtr & msg){
@@ -59,35 +58,18 @@ public:
                             continue;
                         }
 
-                        ROS_INFO("lebt noch 1");
-                        // Here "pose" is the position of the object "id" in "/map" frame.
-                        /*ROS_INFO("Object_%d [x,y,z] [x,y,z,w] in \"%s\" frame: [%f,%f,%f] [%f,%f,%f,%f]",
-                                id, mapFrameId_.c_str(),
-                                pose.getOrigin().x(), pose.getOrigin().y(), pose.getOrigin().z(),
-                                pose.getRotation().x(), pose.getRotation().y(), pose.getRotation().z(), pose.getRotation().w());
-                        ROS_INFO("Object_%d [x,y,z] [x,y,z,w] in \"%s\" frame: [%f,%f,%f] [%f,%f,%f,%f]",
-                                id, msg->header.frame_id.c_str(),
-                                poseCam.getOrigin().x(), poseCam.getOrigin().y(), poseCam.getOrigin().z(),
-                                poseCam.getRotation().x(), poseCam.getRotation().y(), poseCam.getRotation().z(), poseCam.getRotation().w());*/
-
-                        ROS_INFO("%f", pose.getOrigin().x());
-                        double x = pose.getOrigin().x();
-                        float fx = (float) x;
-                        coordinates.data.push_back(fx);
-                        //coordinates.data[0] = fx;
-                        //This causes process to die
-                        /*coordinates.data[0] = pose.getOrigin().x();
-                        coordinates.data[1] = pose.getOrigin().y();
-                        coordinates.data[2] = pose.getOrigin().z();
-                        coordinates.data[3] = pose.getRotation().x();
-                        coordinates.data[4] = pose.getRotation().y();
-                        coordinates.data[5] = pose.getRotation().z();
-                        coordinates.data[6] = pose.getRotation().w();*/
+                        coordinates.data.push_back(pose.getOrigin().x());
+                        coordinates.data.push_back(pose.getOrigin().y());
+                        coordinates.data.push_back(pose.getOrigin().z());
+                        coordinates.data.push_back(pose.getRotation().x());
+                        coordinates.data.push_back(pose.getRotation().y());
+                        coordinates.data.push_back(pose.getRotation().z());
+                        coordinates.data.push_back(pose.getRotation().w());
 
                         //TODO aggregate received data to ensure quality and useful grab positions
 
                         //publish data
-                        //publishPosition();
+                        publishPosition();
 
 
                     }
@@ -97,6 +79,7 @@ public:
 
     void publishPosition() {
         pub_.publish(coordinates);
+        coordinates.data.clear();
     }
 
 };
