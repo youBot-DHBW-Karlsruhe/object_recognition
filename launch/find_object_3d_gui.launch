@@ -21,11 +21,6 @@
 
 	<node name="object_listener" pkg="object_recognition" type="object_recognition" output="screen"/>
 	
-	<!-- Example of tf synchronisation with the objectsStamped message -->
-	<node name="tf_example" pkg="find_object_2d" type="tf_example" output="screen">
-		<param name="map_frame_id" value="/map" type="string"/>
-		<param name="object_prefix" value="object" type="str"/>
-	</node>
 	<!-- fake some tf frames for the example /map -> /odom -> /base_link -> /camera_link -->
 	<node pkg="tf" type="static_transform_publisher" name="base_to_camera_tf" 
 		args="0.1 0.0 0.3 0.0 0.0 0.0 /base_link /camera_link 100" />

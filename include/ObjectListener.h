@@ -103,6 +103,7 @@ public:
         cleaner::ObjectPositions newObject;
         newObject.objectId = objectId;
         positions_.push_back(newObject);
+        return newObject;
     }
 
     void writeBackObjectPositions(cleaner::ObjectPositions currentObject){
