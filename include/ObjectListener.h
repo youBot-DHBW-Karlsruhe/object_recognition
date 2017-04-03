@@ -19,7 +19,7 @@ class ObjectListener {
 
 private:
 
-    std::string mapFrameId_;
+    std::string baseFrameId_;
     std::string objFramePrefix_;
     tf::TransformListener tfListener_;
     ros::Subscriber subs_;
@@ -28,8 +28,8 @@ private:
 
 public:
 
-    ObjectListener(ros::NodeHandle nh) {
-        mapFrameId_ = "/map";
+    ObjectListener(ros::NodeHandle nh, std::string base_frame) {
+        baseFrameId_ = base_frame;
         objFramePrefix_ = "object";
         subs_ = nh.subscribe("/objectsStamped", 1, &ObjectListener::objectsDetectedCallback, this);
         pub_ = nh.advertise<object_recognition::ObjectPosition>("object_position", 1);
@@ -64,7 +64,7 @@ public:
                             // Get transformation from "object_#" frame to target frame "map"
                             // The timestamp matches the one sent over TF
 
-                            tfListener_.lookupTransform(mapFrameId_, objectFrameId, msg->header.stamp, pose);
+                            tfListener_.lookupTransform(baseFrameId_, objectFrameId, msg->header.stamp, pose);
                             tfListener_.lookupTransform(msg->header.frame_id, objectFrameId, msg->header.stamp, poseCam);
                         }
                         catch(tf::TransformException & ex)
