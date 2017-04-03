@@ -23,7 +23,8 @@ private:
     std::string objFramePrefix_;
     tf::TransformListener tfListener_;
     ros::Subscriber subs_;
-    ros::Publisher pub_;
+    ros::Publisher pubAggregated_;
+    ros::Publisher pubSingle_;
     std::vector<cleaner::ObjectPositions> positions_;
 
 public:
@@ -32,7 +33,8 @@ public:
         baseFrameId_ = base_frame;
         objFramePrefix_ = "object";
         subs_ = nh.subscribe("/objectsStamped", 1, &ObjectListener::objectsDetectedCallback, this);
-        pub_ = nh.advertise<object_recognition::ObjectPosition>("object_position", 1);
+        pubAggregated_ = nh.advertise<object_recognition::ObjectPosition>("object_position_aggregated", 1);
+        pubSingle_ = nh.advertise<object_recognition::ObjectPosition>("object_position_single", 1);
     }
 
     void objectsDetectedCallback(const find_object_2d::ObjectsStampedConstPtr & msg){
@@ -77,11 +79,14 @@ public:
                         position.pose = coordinates;
                         currentObject.positions.push_back(position);
 
-                        int threshold = 5;
+                        object_recognition::ObjectPosition singlePosition;
+                        singlePosition.object_id = currentObject.objectId;
+                        publishPosition(pubSingle_, singlePosition);
 
+                        int threshold = 5;
                         if (currentObject.positions.size() >= threshold) {
                             object_recognition::ObjectPosition aggregatedPosition = averageAggregation(currentObject);
-                            publishPosition(aggregatedPosition);
+                            publishPosition(pubAggregated_, aggregatedPosition);
                             deleteObjectPositions(currentObject);
                         }
                         writeBackObjectPositions(currentObject);
@@ -91,8 +96,13 @@ public:
 
     }
 
-    void publishPosition(object_recognition::ObjectPosition position) {
-        pub_.publish(position);
+    void publishPosition(ros::Publisher pub, object_recognition::ObjectPosition position) {
+        if(true){ //think of a useful condition here
+            changeGraspingDegree(position.pose.orientation);
+        }else{
+            normalizeGraspingDegree(position.pose.orientation);
+        }
+        pub.publish(position);
     }
 
     cleaner::ObjectPositions getObjectPositions(std::string objectId){
@@ -143,6 +153,7 @@ public:
         return finalCoordinates;
     }
 
+    //could be refactored together with normalizeGraspingDegree
     void changeGraspingDegree(geometry_msgs::Quaternion &msgQuat){
         tf::Quaternion tfQuat;
         tf::quaternionMsgToTF(msgQuat,tfQuat);
@@ -161,14 +172,30 @@ public:
         tf::quaternionTFToMsg(tfQuat, msgQuat);
     }
 
+    void normalizeGraspingDegree(geometry_msgs::Quaternion &msgQuat){
+        tf::Quaternion tfQuat;
+        tf::quaternionMsgToTF(msgQuat,tfQuat);
+        double roll, pitch, yaw;
+        tf::Matrix3x3(tfQuat).getRPY(roll, pitch, yaw);
+        /*double rollDegree = roll * 180 / M_PI;
+        ROS_INFO("Roll before change: %f",rollDegree);*/
+        if(roll > M_PI_2){
+            roll = -M_PI_2 + (roll-M_PI_2);
+        }else
+            if(roll < -M_PI_2){
+            roll = M_PI_2 + (roll+M_PI_2);
+        }
+        /*rollDegree = roll * 180 / M_PI;
+        ROS_INFO("Roll after change: %f",rollDegree);*/
+        tfQuat.setRPY(roll, pitch, yaw);
+        tf::quaternionTFToMsg(tfQuat, msgQuat);
+    }
+
     object_recognition::ObjectPosition averageAggregation(cleaner::ObjectPositions currentObject) {
         object_recognition::ObjectPosition aggregatedPosition;
         aggregatedPosition.object_id = currentObject.objectId;
         for (int i = 0; i < currentObject.positions.size(); i++){
             aggregatedPosition.pose = addBiasedCoordinates(aggregatedPosition.pose, currentObject.positions.at(i).pose, currentObject.positions.size());
-        }
-        if(true){ //think of a useful condition here
-            changeGraspingDegree(aggregatedPosition.pose.orientation);
         }
         return aggregatedPosition;
     }
