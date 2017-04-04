@@ -122,7 +122,7 @@ public:
 
     int getPictureId(object_recognition::ObjectPosition position){
         std::vector<std::string> object_id = split(position.object_id,'_');
-        return object_id[1];
+        return std::stoi(object_id[1]);
     }
 
     cleaner::ObjectPositions getObjectPositions(std::string objectId){
@@ -173,40 +173,31 @@ public:
         return finalCoordinates;
     }
 
-    //could be refactored together with normalizeGraspingDegree
-    void changeGraspingDegree(geometry_msgs::Quaternion &msgQuat){
-        tf::Quaternion tfQuat;
-        tf::quaternionMsgToTF(msgQuat,tfQuat);
-        double roll, pitch, yaw;
-        tf::Matrix3x3(tfQuat).getRPY(roll, pitch, yaw);
-        double rollDegree = roll * 180 / M_PI;
-        ROS_INFO("Roll before change: %f",rollDegree);
-        if(roll < 0){
-            roll += (M_PI/2);
-        }else{
-            roll -= (M_PI/2);
-        }
-        rollDegree = roll * 180 / M_PI;
-        ROS_INFO("Roll after change: %f",rollDegree);
-        tfQuat.setRPY(roll, pitch, yaw);
-        tf::quaternionTFToMsg(tfQuat, msgQuat);
-    }
-
     void normalizeGraspingDegree(int pictureId, geometry_msgs::Quaternion &msgQuat){
         tf::Quaternion tfQuat;
         tf::quaternionMsgToTF(msgQuat,tfQuat);
         double roll, pitch, yaw;
         tf::Matrix3x3(tfQuat).getRPY(roll, pitch, yaw);
+
         double rollDegree = roll * 180 / M_PI;
-        ROS_INFO("Roll before change: %f",rollDegree);
+        ROS_INFO("detected Roll: %f",rollDegree);
+
+        double additionialRoll = getDegree(pictureId) * M_PI / 180;
+        roll += additionialRoll;
+
+        rollDegree = roll * 180 / M_PI;
+        ROS_INFO("Roll after addition: %f",rollDegree);
+
         if(roll > M_PI_2){
             roll = -M_PI_2 + (roll-M_PI_2);
         }else
             if(roll < -M_PI_2){
             roll = M_PI_2 + (roll+M_PI_2);
         }
+
         rollDegree = roll * 180 / M_PI;
-        ROS_INFO("Roll after change: %f",rollDegree);
+        ROS_INFO("Roll after normalization: %f",rollDegree);
+
         tfQuat.setRPY(roll, pitch, yaw);
         tf::quaternionTFToMsg(tfQuat, msgQuat);
     }

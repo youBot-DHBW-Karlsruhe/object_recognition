@@ -1,5 +1,8 @@
 ---
 objects:
+ duplostein_labor:
+  -9:0
+  -10:90
  duplostein_alex:
   -11:90
   -12:0
