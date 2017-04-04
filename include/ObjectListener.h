@@ -81,6 +81,7 @@ public:
 
                         object_recognition::ObjectPosition singlePosition;
                         singlePosition.object_id = currentObject.objectId;
+                        singlePosition.pose = coordinates;
                         publishPosition(pubSingle_, singlePosition);
 
                         int threshold = 5;
