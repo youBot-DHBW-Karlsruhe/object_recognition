@@ -5,7 +5,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "object_listener");
 
     ros::NodeHandle nh;
-    cleaner::ObjectListener listener(nh, "/base_link");
+    cleaner::ObjectListener listener(nh, "/arm_link_1");
     ros::spin();
 
     return 0;

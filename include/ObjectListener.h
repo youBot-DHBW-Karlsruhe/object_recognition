@@ -69,14 +69,12 @@ public:
 
                         //tf transformation
                         tf::StampedTransform pose;
-                        tf::StampedTransform poseCam;
                         try
                         {
                             // Get transformation from "object_#" frame to target frame "map"
                             // The timestamp matches the one sent over TF
 
                             tfListener_.lookupTransform(baseFrameId_, objectFrameId, msg->header.stamp, pose);
-                            tfListener_.lookupTransform(msg->header.frame_id, objectFrameId, msg->header.stamp, poseCam);
                         }
                         catch(tf::TransformException & ex)
                         {
