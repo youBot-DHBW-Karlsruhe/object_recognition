@@ -107,14 +107,22 @@ public:
     }
 
     void publishPosition(ros::Publisher pub, object_recognition::ObjectPosition position) {
-        if(position.object_id.find("quer") != std::string::npos){ //think of a useful condition here
+        int id = getPictureId(position);
+        normalizeGraspingDegree(id, position.pose.orientation);
+        //rollDegree = roll * 180 / M_PI;
+        /*if(position.object_id.find("quer") != std::string::npos){ //think of a useful condition here
             ROS_INFO("Objekt quer");
             changeGraspingDegree(position.pose.orientation);
         }else{
             ROS_INFO("Objekt laengs");
             normalizeGraspingDegree(position.pose.orientation);
-        }
+        }*/
         pub.publish(position);
+    }
+
+    int getPictureId(object_recognition::ObjectPosition position){
+        std::vector<std::string> object_id = split(position.object_id,'_');
+        return object_id[1];
     }
 
     cleaner::ObjectPositions getObjectPositions(std::string objectId){
@@ -184,7 +192,7 @@ public:
         tf::quaternionTFToMsg(tfQuat, msgQuat);
     }
 
-    void normalizeGraspingDegree(geometry_msgs::Quaternion &msgQuat){
+    void normalizeGraspingDegree(int pictureId, geometry_msgs::Quaternion &msgQuat){
         tf::Quaternion tfQuat;
         tf::quaternionMsgToTF(msgQuat,tfQuat);
         double roll, pitch, yaw;
