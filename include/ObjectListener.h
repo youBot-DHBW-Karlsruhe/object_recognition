@@ -7,6 +7,7 @@
 #include <std_msgs/Float32MultiArray.h>
 #include <object_recognition/ObjectPosition.h>
 #include <math.h>
+#include <XmlRpcValue.h>
 
 namespace cleaner {
 
@@ -14,6 +15,12 @@ typedef struct {
     std::vector<object_recognition::ObjectPosition> positions;
     std::string objectId;
 } ObjectPositions;
+
+typedef struct {
+    std::string objectName;
+    std::vector<int> images;
+    std::vector<int> degrees;
+} ObjectPictures;
 
 class ObjectListener {
 
@@ -26,12 +33,15 @@ private:
     ros::Publisher pubAggregated_;
     ros::Publisher pubSingle_;
     std::vector<cleaner::ObjectPositions> positions_;
+    std::vector<cleaner::ObjectPictures> objectPicturesParameter_;
 
 public:
 
     ObjectListener(ros::NodeHandle nh, std::string base_frame) {
         baseFrameId_ = base_frame;
         objFramePrefix_ = "object";
+        objectPicturesParameter_ = loadObjectsFromParameterServer(nh);
+
         subs_ = nh.subscribe("/objectsStamped", 1, &ObjectListener::objectsDetectedCallback, this);
         pubAggregated_ = nh.advertise<object_recognition::ObjectPosition>("object_position_aggregated", 1);
         pubSingle_ = nh.advertise<object_recognition::ObjectPosition>("object_position_single", 1);
@@ -45,7 +55,6 @@ public:
                     {
                         object_recognition::ObjectPosition position;
                         geometry_msgs::Pose coordinates;
-                        // get data
 
                         //get object_id
                         int id = (int)msg->objects.data[i];
@@ -98,9 +107,11 @@ public:
     }
 
     void publishPosition(ros::Publisher pub, object_recognition::ObjectPosition position) {
-        if(true){ //think of a useful condition here
+        if(position.object_id.find("quer") != std::string::npos){ //think of a useful condition here
+            ROS_INFO("Objekt quer");
             changeGraspingDegree(position.pose.orientation);
         }else{
+            ROS_INFO("Objekt laengs");
             normalizeGraspingDegree(position.pose.orientation);
         }
         pub.publish(position);
@@ -160,15 +171,15 @@ public:
         tf::quaternionMsgToTF(msgQuat,tfQuat);
         double roll, pitch, yaw;
         tf::Matrix3x3(tfQuat).getRPY(roll, pitch, yaw);
-        /*double rollDegree = roll * 180 / M_PI;
-        ROS_INFO("Roll before change: %f",rollDegree);*/
+        double rollDegree = roll * 180 / M_PI;
+        ROS_INFO("Roll before change: %f",rollDegree);
         if(roll < 0){
             roll += (M_PI/2);
         }else{
             roll -= (M_PI/2);
         }
-        /*rollDegree = roll * 180 / M_PI;
-        ROS_INFO("Roll after change: %f",rollDegree);*/
+        rollDegree = roll * 180 / M_PI;
+        ROS_INFO("Roll after change: %f",rollDegree);
         tfQuat.setRPY(roll, pitch, yaw);
         tf::quaternionTFToMsg(tfQuat, msgQuat);
     }
@@ -178,16 +189,16 @@ public:
         tf::quaternionMsgToTF(msgQuat,tfQuat);
         double roll, pitch, yaw;
         tf::Matrix3x3(tfQuat).getRPY(roll, pitch, yaw);
-        /*double rollDegree = roll * 180 / M_PI;
-        ROS_INFO("Roll before change: %f",rollDegree);*/
+        double rollDegree = roll * 180 / M_PI;
+        ROS_INFO("Roll before change: %f",rollDegree);
         if(roll > M_PI_2){
             roll = -M_PI_2 + (roll-M_PI_2);
         }else
             if(roll < -M_PI_2){
             roll = M_PI_2 + (roll+M_PI_2);
         }
-        /*rollDegree = roll * 180 / M_PI;
-        ROS_INFO("Roll after change: %f",rollDegree);*/
+        rollDegree = roll * 180 / M_PI;
+        ROS_INFO("Roll after change: %f",rollDegree);
         tfQuat.setRPY(roll, pitch, yaw);
         tf::quaternionTFToMsg(tfQuat, msgQuat);
     }
@@ -199,6 +210,61 @@ public:
             aggregatedPosition.pose = addBiasedCoordinates(aggregatedPosition.pose, currentObject.positions.at(i).pose, currentObject.positions.size());
         }
         return aggregatedPosition;
+    }
+
+    std::vector<cleaner::ObjectPictures> loadObjectsFromParameterServer(ros::NodeHandle nh){
+        std::vector<cleaner::ObjectPictures> objectsPicturesList;
+
+        XmlRpc::XmlRpcValue objects;
+        nh.getParam("object_config/objects", objects);
+        ROS_ASSERT(objects.getType() == XmlRpc::XmlRpcValue::TypeStruct);
+
+        for(XmlRpc::XmlRpcValue::ValueStruct::const_iterator it = objects.begin(); it != objects.end(); ++it) {
+            cleaner::ObjectPictures objectPictures;
+            objectPictures.objectName = (std::string)(it->first);
+
+            XmlRpc::XmlRpcValue object;
+            std::stringstream objectName;
+            objectName << "object_config/objects/" << (std::string)(it->first);
+            nh.getParam(objectName.str().c_str(), object);
+            ROS_ASSERT(object.getType() == XmlRpc::XmlRpcValue::TypeString);
+
+            std::vector<std::string> images = split(object, '-');
+            for(int i = 1; i < images.size(); i++){
+                std::vector<std::string> image = split(images[i], ':');
+                objectPictures.images.push_back(std::stoi(image[0]));
+                objectPictures.degrees.push_back(std::stoi(image[1]));
+            }
+
+            objectsPicturesList.push_back(objectPictures);
+        }
+        return objectsPicturesList;
+    }
+
+    int getDegree(int objectId){
+        for(int i=0; i < objectPicturesParameter_.size(); i++){
+            for(int j=0; j < objectPicturesParameter_[i].images.size(); j++){
+                if(objectPicturesParameter_[i].images[j] == objectId){
+                    return objectPicturesParameter_[i].degrees[j];
+                }
+            }
+        }
+    }
+
+    std::vector<std::string> split(const std::string &s, char delim) {
+        std::vector<std::string> elems;
+        split(s, delim, std::back_inserter(elems));
+        return elems;
+    }
+
+    template<typename Out>
+    void split(const std::string &s, char delim, Out result) {
+        std::stringstream ss;
+        ss.str(s);
+        std::string item;
+        while (std::getline(ss, item, delim)) {
+            *(result++) = item;
+        }
     }
 
 };
