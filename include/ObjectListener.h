@@ -11,6 +11,10 @@
 
 namespace cleaner {
 
+#define OFFSET_Z  0.09
+#define OFFSET_Y -0.02
+#define OFFSET_X  0.00
+
 typedef struct {
     std::vector<object_recognition::ObjectPosition> positions;
     std::string objectId;
@@ -150,9 +154,9 @@ public:
 
     geometry_msgs::Pose assignCoordinates(tf::StampedTransform pose){
         geometry_msgs::Pose coordinates;
-        coordinates.position.x = pose.getOrigin().x();
-        coordinates.position.y = pose.getOrigin().y();
-        coordinates.position.z = pose.getOrigin().z();
+        coordinates.position.x = pose.getOrigin().x() + OFFSET_X;
+        coordinates.position.y = pose.getOrigin().y() + OFFSET_Y;
+        coordinates.position.z = pose.getOrigin().z() + OFFSET_Z;
         coordinates.orientation.x = pose.getRotation().x();
         coordinates.orientation.y = pose.getRotation().y();
         coordinates.orientation.z = pose.getRotation().z();
