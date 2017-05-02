@@ -13,7 +13,7 @@ namespace cleaner {
 
 #define OFFSET_Z  0.0
 #define OFFSET_Y -0.02
-#define OFFSET_X  -0.05
+#define OFFSET_X  -0.03
 
 typedef struct {
     std::vector<object_recognition::ObjectPosition> positions;
