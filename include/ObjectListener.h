@@ -93,6 +93,7 @@ public:
 
                         coordinates = assignCoordinates(pose);
                         position.pose = coordinates;
+                        position.header.stamp = timeStamp;
                         currentObject.positions.push_back(position);
 
                         object_recognition::ObjectPosition singlePosition;
@@ -103,7 +104,6 @@ public:
 
                         if (currentObject.positions.size() >= aggregedThreshold) {
                             object_recognition::ObjectPosition aggregatedPosition = averageAggregation(currentObject);
-                            aggregatedPosition.header.stamp = timeStamp;
                             publishPosition(pubAggregated_, aggregatedPosition);
                             deleteObjectPositions(currentObject);
                         }
@@ -208,6 +208,9 @@ public:
         object_recognition::ObjectPosition aggregatedPosition;
         aggregatedPosition.object_id = currentObject.objectId;
         for (int i = 0; i < currentObject.positions.size(); i++){
+            if(i = 0){
+                aggregatedPosition.header.stamp = currentObject.positions.at(i).header.stamp;
+            }
             aggregatedPosition.pose = addBiasedCoordinates(aggregatedPosition.pose, currentObject.positions.at(i).pose, currentObject.positions.size());
         }
         return aggregatedPosition;
