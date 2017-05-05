@@ -39,9 +39,13 @@ private:
     std::vector<cleaner::ObjectPositions> positions_;
     std::vector<cleaner::ObjectPictures> objectPicturesParameter_;
 
+    const int aggregedThreshold;
+
 public:
 
-    ObjectListener(ros::NodeHandle nh, std::string base_frame) {
+    ObjectListener(ros::NodeHandle nh, std::string base_frame):
+        aggregedThreshold(3)
+    {
         baseFrameId_ = base_frame;
         objFramePrefix_ = "object";
         objectPicturesParameter_ = loadObjectsFromParameterServer(nh);
@@ -95,8 +99,7 @@ public:
                         singlePosition.pose = coordinates;
                         publishPosition(pubSingle_, singlePosition);
 
-                        int threshold = 5;
-                        if (currentObject.positions.size() >= threshold) {
+                        if (currentObject.positions.size() >= aggregedThreshold) {
                             object_recognition::ObjectPosition aggregatedPosition = averageAggregation(currentObject);
                             publishPosition(pubAggregated_, aggregatedPosition);
                             deleteObjectPositions(currentObject);
@@ -176,19 +179,15 @@ public:
     }
 
     void normalizeGraspingDegree(int pictureId, geometry_msgs::Quaternion &msgQuat){
+        double roll, pitch, yaw;
         tf::Quaternion tfQuat;
         tf::quaternionMsgToTF(msgQuat,tfQuat);
-        double roll, pitch, yaw;
         tf::Matrix3x3(tfQuat).getRPY(roll, pitch, yaw);
-
-        double rollDegree = roll * 180 / M_PI;
-        ROS_INFO("detected Roll: %f",rollDegree);
 
         double additionialRoll = getDegree(pictureId) * M_PI / 180;
         roll += additionialRoll;
-
-        rollDegree = roll * 180 / M_PI;
-        ROS_INFO("Roll after addition: %f",rollDegree);
+        pitch = 0;
+        yaw = 0;
 
         if(roll > M_PI_2){
             roll = -M_PI_2 + (roll-M_PI_2);
@@ -196,9 +195,7 @@ public:
             if(roll < -M_PI_2){
             roll = M_PI_2 + (roll+M_PI_2);
         }
-
-        rollDegree = roll * 180 / M_PI;
-        ROS_INFO("Roll after normalization: %f",rollDegree);
+        ROS_INFO("Roll after normalization: %f", roll * 180 / M_PI);
 
         tfQuat.setRPY(roll, pitch, yaw);
         tf::quaternionTFToMsg(tfQuat, msgQuat);
