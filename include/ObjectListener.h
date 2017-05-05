@@ -66,6 +66,7 @@ public:
 
                         //get object_id
                         int id = (int)msg->objects.data[i];
+                        ros::Time timeStamp = msg->header.stamp;
                         std::stringstream ss;
                         ss << "object_" << id;
                         std::string objectFrameId = ss.str();
@@ -97,10 +98,12 @@ public:
                         object_recognition::ObjectPosition singlePosition;
                         singlePosition.object_id = currentObject.objectId;
                         singlePosition.pose = coordinates;
+                        singlePosition.header.stamp = timeStamp;
                         publishPosition(pubSingle_, singlePosition);
 
                         if (currentObject.positions.size() >= aggregedThreshold) {
                             object_recognition::ObjectPosition aggregatedPosition = averageAggregation(currentObject);
+                            aggregatedPosition.header.stamp = timeStamp;
                             publishPosition(pubAggregated_, aggregatedPosition);
                             deleteObjectPositions(currentObject);
                         }
