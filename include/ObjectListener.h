@@ -12,7 +12,7 @@
 namespace cleaner {
 
 #define OFFSET_Z  0.0
-#define OFFSET_Y -0.02
+#define OFFSET_Y -0.01
 #define OFFSET_X  -0.03
 
 typedef struct {
