@@ -50,15 +50,17 @@ public:
         objFramePrefix_ = "object";
         objectPicturesParameter_ = loadObjectsFromParameterServer(nh);
 
-        subs_ = nh.subscribe("/objectsStamped", 1, &ObjectListener::objectsDetectedCallback, this);
-        pubAggregated_ = nh.advertise<object_recognition::ObjectPosition>("object_position_aggregated", 1);
-        pubSingle_ = nh.advertise<object_recognition::ObjectPosition>("object_position_single", 1);
+        subs_ = nh.subscribe("/objectsStamped", 10, &ObjectListener::objectsDetectedCallback, this);
+        pubAggregated_ = nh.advertise<object_recognition::ObjectPosition>("object_position_aggregated", 10);
+        pubSingle_ = nh.advertise<object_recognition::ObjectPosition>("object_position_single", 10);
     }
 
     void objectsDetectedCallback(const find_object_2d::ObjectsStampedConstPtr & msg){
+
+        //ROS_INFO("Callback");
         //convert data
-        if(msg->objects.data.size())
-                {
+        if(msg->objects.data.size()){
+            ROS_INFO("Callback with data");
                     for(unsigned int i=0; i<msg->objects.data.size(); i+=12)
                     {
                         object_recognition::ObjectPosition position;
@@ -74,7 +76,7 @@ public:
                         ROS_INFO("object_%d", id);
 
                         //get saved positions for current object
-                        cleaner::ObjectPositions currentObject = getObjectPositions(objectFrameId);
+                        //cleaner::ObjectPositions currentObject = getObjectPositions(objectFrameId);
 
                         //tf transformation
                         tf::StampedTransform pose;
@@ -94,20 +96,21 @@ public:
                         coordinates = assignCoordinates(pose);
                         position.pose = coordinates;
                         position.header.stamp = timeStamp;
-                        currentObject.positions.push_back(position);
+                        //currentObject.positions.push_back(position);
 
                         object_recognition::ObjectPosition singlePosition;
-                        singlePosition.object_id = currentObject.objectId;
+                        singlePosition.object_id = objectFrameId;
+                        //singlePosition.object_id = currentObject.objectId;
                         singlePosition.pose = coordinates;
                         singlePosition.header.stamp = timeStamp;
                         publishPosition(pubSingle_, singlePosition);
 
-                        if (currentObject.positions.size() >= aggregedThreshold) {
+                        /*if (currentObject.positions.size() >= aggregedThreshold) {
                             object_recognition::ObjectPosition aggregatedPosition = averageAggregation(currentObject);
                             publishPosition(pubAggregated_, aggregatedPosition);
                             deleteObjectPositions(currentObject);
                         }
-                        writeBackObjectPositions(currentObject);
+                        writeBackObjectPositions(currentObject);*/
 
                     }
         }
@@ -192,6 +195,7 @@ public:
         pitch = 0;
         yaw = 0;
 
+	ROS_INFO("Roll before normalization: %f", roll * 180 / M_PI);
         if(roll > M_PI_2){
             roll = -M_PI_2 + (roll-M_PI_2);
         }else
